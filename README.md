@@ -1,6 +1,6 @@
 ## Node + Express + JWT API
 
-> [Express server interview test](https://github.com/caiowilson/teste-express-server)
+> [Express server interview test](https://github.com/caiowilson/teste-node-server)
 
 This project was scaffolded by [me](mailto:caiowilson@gmail.com) using previous projects.
 
