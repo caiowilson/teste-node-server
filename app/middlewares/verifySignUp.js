@@ -1,5 +1,5 @@
 const db = require("../models");
-const ROLES = db.ROLES;
+const ROLES = db.ROLES; //TODO usar um find para setar
 const User = db.user;
 
 checkDuplicateUsernameOrEmail = (req, res, next) => {

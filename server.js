@@ -18,8 +18,14 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 const db = require("./app/models");
-const User = require("./app/models/user.model");
 const Role = db.role;
+
+//TODO refatorar para usar só o db.monelname 
+//?renomear arquivos para Pascal Casing???
+const User = require("./app/models/user.model");
+const Category = require("./app/models/category.model");
+const Medication = require("./app/models/medication.model");
+
 
 db.mongoose
   .connect(`mongodb://${dbConfig.HOST}:${dbConfig.PORT}/${dbConfig.DB}`, {
@@ -27,22 +33,20 @@ db.mongoose
     useUnifiedTopology: true
   })
   .then(() => {
-    console.log("Successfully connect to MongoDB.");
-    initRoles();
+    console.log("Successfully connected to MongoDB.");
+    initRoles()
+    initUsers()
+    initCategories()
+    initMedications()
   })
   .catch(err => {
     console.error("Connection error", err);
     process.exit();
   });
 
-// simple route
-app.get("/", (req, res) => {
-  res.json({ message: "Welcome to bezkoder application." });
-});
-
 // routes @TODO: adicionar um index aqui e no controllers tbm.
 require("./app/routes/auth.routes")(app);
-require("./app/routes/user.routes")(app);
+require("./app/routes/medication.routes")(app);
 
 // set port, listen for requests
 const PORT = process.env.PORT || 8080;
@@ -75,18 +79,100 @@ function initRoles() {
     }
   });
 }
-function initUsers() {
-  User.estimatedDocumentCount((err, count) => {
+function initCategories() {
+  Category.estimatedDocumentCount((err, count) => {
     if (!err && count === 0) {
-      new User({
-        username: "admin",
-        password: bcrypt.hashSync("admin", 8)
+      new Category({
+        name: "Generic",
+        description: "trolololo"
+      }).save(err => {
+        if (err) {
+          console.log("error", err);
+        }
+        
+        console.log("added 'Generic' to categories collection");
+      });
+      new Category({
+        name: "Similar",
+        description: "trolololo"
       }).save(err => {
         if (err) {
           console.log("error", err);
         }
 
-        console.log("added 'admin' to user collection");
+        console.log("added 'Similar' to categories collection");
+      });
+    }
+  });
+}
+function initMedications() {
+  Medication.estimatedDocumentCount((err, count) => {
+    if (!err && count === 0) {
+      new Medication({
+        name: "Ibuprofeno",
+        description:"Ibuprofeno ué..",
+        price: 19.99,
+      })
+      .save((err, med) => {
+        //include normalized categories ?TODO refatorar
+        User.findOne({}, (err,user)=>{
+          med.createdBy = user._id
+          med.updatedBy = user._id
+        })
+        Category.find({
+            name: {
+              $in: "Generic"
+            }
+          },
+          (err, cats) => {
+            med.categories = cats.map(cat => cat._id);
+            med.save(err => {
+              console.log("added 'Ibuprofeno' to medications collection");
+            });
+          }
+        );
+      })
+     
+      new Medication({
+        name: "Propranolol",
+        description:"remedio de coração..",
+        price: 3.85,
+        createdBy:User.findOne({}).exec((err,user)=>{return user._id}),
+        updatedBy:User.findOne({}).exec((err,user)=>{return user._id})
+      })
+      .save((err,med)=>{
+        User.findOne({}, (err,user)=>{
+          med.createdBy = user._id
+          med.updatedBy = user._id
+        })
+        Category.find(
+          {
+            name: { $in: ["Similar", "Generic"] }
+          },
+          (err, cats) => {
+            
+            med.categories = cats.map(cat => cat._id);
+            med.save(err => {
+                            console.log("added 'Propranolol' to medications collection");
+            });
+          }
+        );
+      })
+    }
+  });
+}
+function initUsers() {
+  User.estimatedDocumentCount((err, count) => {
+    if (!err && count === 0) {
+      new User({
+        username: "user",
+        password: bcrypt.hashSync("user", 8),
+      }).save(err => {
+        if (err) {
+          console.log("error", err);
+        }
+
+        console.log("added 'user' with pass 'user' to user collection");
       });
     }
   });
